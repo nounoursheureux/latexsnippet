@@ -19,13 +19,15 @@ func handle(err error) {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: " + os.Args[0] + " <LaTeX snippet>")
+	if len(os.Args) < 3 {
+		log.Fatal("Usage: " + os.Args[0] + " <LaTeX snippet> <filename>")
 	}
+
+	var outpath = os.Args[2]
 
 	var cwd, err = os.Getwd()
 
-	tmpdir, err := ioutil.TempDir("", "latex-snippet")
+	tmpdir, err := ioutil.TempDir("", "latexsnippet")
 	handle(err)
 	os.Chdir(tmpdir)
 
@@ -34,6 +36,7 @@ func main() {
 	var latex_string = template_begin + "\n" + os.Args[1] + "\n" + template_end
 	latex_file, err := os.Create("snippet.tex")
 	handle(err)
+	defer latex_file.Close()
 
 	latex_file.WriteString(latex_string)
 
@@ -42,8 +45,6 @@ func main() {
 	latex_cmd.Stderr = os.Stderr
 	err = latex_cmd.Run()
 	handle(err)
-	err = latex_file.Close()
-	handle(err)
 
 	buf, err := ioutil.ReadFile("snippet.png")
 	handle(err)
@@ -51,6 +52,6 @@ func main() {
 	err = os.Chdir(cwd)
 	handle(err)
 
-	err = ioutil.WriteFile("snippet.png", buf, 0666)
+	err = ioutil.WriteFile(outpath, buf, 0666)
 	handle(err)
 }
