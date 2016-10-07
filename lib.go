@@ -1,4 +1,4 @@
-package main
+package latexsnippet
 
 import (
 	"log"
@@ -18,24 +18,25 @@ func handle(err error) {
 	}
 }
 
-func main() {
-	if len(os.Args) < 3 {
-		log.Fatal("Usage: " + os.Args[0] + " <LaTeX snippet> <filename>")
+func RenderSnippet(snippet string, outpath string) error {
+	var cwd, err = os.Getwd()
+	if err != nil {
+		return err
 	}
 
-	var outpath = os.Args[2]
-
-	var cwd, err = os.Getwd()
-
 	tmpdir, err := ioutil.TempDir("", "latexsnippet")
-	handle(err)
+	if err != nil {
+		return err
+	}
 	os.Chdir(tmpdir)
 
 	defer os.RemoveAll(tmpdir)
 
-	var latex_string = template_begin + "\n" + os.Args[1] + "\n" + template_end
+	var latex_string = template_begin + "\n" + snippet + "\n" + template_end
 	latex_file, err := os.Create("snippet.tex")
-	handle(err)
+	if err != nil {
+		return err
+	}
 	defer latex_file.Close()
 
 	latex_file.WriteString(latex_string)
@@ -44,14 +45,24 @@ func main() {
 	latex_cmd.Stdout = os.Stdout
 	latex_cmd.Stderr = os.Stderr
 	err = latex_cmd.Run()
-	handle(err)
+	if err != nil {
+		return err
+	}
 
 	buf, err := ioutil.ReadFile("snippet.png")
-	handle(err)
+	if err != nil {
+		return err
+	}
 
 	err = os.Chdir(cwd)
-	handle(err)
+	if err != nil {
+		return err
+	}
 
 	err = ioutil.WriteFile(outpath, buf, 0666)
-	handle(err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
